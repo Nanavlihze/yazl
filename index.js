@@ -44,6 +44,20 @@ ZipFile.prototype.addFile = function(realPath, metadataPath, options) {
   });
 };
 
+ZipFile.prototype.addStreamCreator = function(creator, metadataPath, options) {
+   var self = this;
+   metadataPath = validateMetadataPath(metadataPath, false);
+   if (options == null) options = {};
+   var entry = new Entry(metadataPath, false, options);
+   self.entries.push(entry);
+   entry.setFileDataPumpFunction(async function() {
+      creator(metadataPath).then((stream) => {
+         entry.state = Entry.FILE_DATA_IN_PROGRESS;
+         pumpFileDataReadStream(self, entry, stream);
+      });
+   });
+ };
+
 ZipFile.prototype.addReadStream = function(readStream, metadataPath, options) {
   var self = this;
   metadataPath = validateMetadataPath(metadataPath, false);
@@ -667,7 +681,7 @@ Crc32Watcher.prototype._transform = function(chunk, encoding, cb) {
   cb(null, chunk);
 };
 
-var cp437 = '\u0000☺☻♥♦♣♠•◘○◙♂♀♪♫☼►◄↕‼¶§▬↨↑↓→←∟↔▲▼ !"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~⌂ÇüéâäàåçêëèïîìÄÅÉæÆôöòûùÿÖÜ¢£¥₧ƒáíóúñÑªº¿⌐¬½¼¡«»░▒▓│┤╡╢╖╕╣║╗╝╜╛┐└┴┬├─┼╞╟╚╔╩╦╠═╬╧╨╤╥╙╘╒╓╫╪┘┌█▄▌▐▀αßΓπΣσµτΦΘΩδ∞φε∩≡±≥≤⌠⌡÷≈°∙·√ⁿ²■ ';
+var cp437 = '\u0000☺☻♥♦♣♠•◘○◙♂♀♪♫☼►◄↕‼¶§▬↨↑↓→←∟↔▲▼ !"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~⌂ÇüéâäàåçêëèïîìÄÅÉæÆôöòûùÿÖÜ¢£¥₧ƒáíóúñÑªº¿⌐¬½¼¡«»░▒▓│┤╡╢╖╕╣║╗╝╜╛┐└┴┬├─┼╞╟╚╔╩╦╠═╬╧╨╤╥╙╘╒╓╫╪┘┌█▄▌▐▀αßΓπΣσµτΦΘΩδ∞φε∩≡±≥≤⌠⌡÷≈°∙·√ⁿ²■ ';
 if (cp437.length !== 256) throw new Error("assertion failure");
 var reverseCp437 = null;
 
